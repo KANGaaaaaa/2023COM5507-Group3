@@ -1,0 +1,72 @@
+from selenium import webdriver
+from selenium.webdriver.common.by import By
+from selenium.webdriver.common.keys import Keys
+from selenium.webdriver.chrome.service import Service
+from selenium.webdriver.chrome.options import Options
+from selenium.webdriver.support.ui import WebDriverWait  
+from selenium.webdriver.support import expected_conditions as EC
+from selenium.common.exceptions import NoSuchElementException, TimeoutException
+from datetime import datetime, timedelta
+import time
+import csv
+
+# Function to navigate to the video URL and ensure comments are loaded
+def extract_comments(driver, video_url):
+    driver.get(video_url)
+    WebDriverWait(driver, 20).until(EC.presence_of_element_located((By.XPATH, '//*[@id="comments"]')))
+
+# Function to parse published date from the text
+def get_publish_date_from_text(date_text):
+    current_time = datetime.now()
+    # Parsing logic goes here (omitted for brevity)
+
+# Function to scroll down the page and load all video data
+def extract_video_data(driver):
+
+
+    # Extract video data logic goes here (omitted for brevity)
+
+# Function to navigate to a video URL and extract comments
+def extract_comments(driver, video_url):
+    driver.get(video_url)
+    time.sleep(7)
+    # Comment extraction logic goes here (omitted for brevity)
+
+# Set up options for headless Chrome driver
+options = Options()
+options.headless = True
+options.add_argument("lang=en_US")
+path='/Users/zwl77/Downloads/chromedriver-mac-arm64/chromedriver'
+
+# Create a new instance of the Chrome driver
+service=Service(executable_path=path)
+driver = webdriver.Chrome(service=service, options=options)
+
+# Go to the YouTube channel and wait for the page to load
+driver.get('https://www.youtube.com/@nytimes/search?query=Israel,Gaza')
+time.sleep(13)
+
+# Extract video data from the page
+video_data = extract_video_data(driver)
+
+# Filter video data based on publish date
+nine_years_ago = datetime.now() - timedelta(days=5475)
+filtered_video_data = [video for video in video_data if video['publish_date'] > nine_years_ago]
+
+# Extract comments from each video
+all_video_comments = []
+for video in filtered_video_data:
+    comments = extract_comments(driver, video['link'])
+    all_video_comments.extend([{'title': video['title'], 'publish_date': video['publish_date'].strftime('%Y-%m-%d'),
+                                'link': video['link'], 'comment': comment} for comment in comments])
+
+# Close the Chrome driver
+driver.quit()
+
+# Write the extracted data to a CSV file
+csv_file_path = '/Users/zwl77/data/1/youtube_commentsNYTimes.csv'
+with open(csv_file_path, 'w', newline='', encoding='utf-8') as file:
+    writer = csv.writer(file)
+    writer.writerow(['Title', 'Publish Date', 'Video Link', 'Comment'])
+    for item in all_video_comments:
+        writer.writerow([item['title'], item['publish_date'], item['link'], item['comment']])
